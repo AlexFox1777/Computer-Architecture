@@ -15,6 +15,7 @@ class CPU:
             0b10000010: 'ldi',
             0b01000111: 'prn',
             0b00000001: 'hlt',
+            0b10100010: 'mul',
         }
 
     def ram_read(self, address):
@@ -26,23 +27,44 @@ class CPU:
     def load(self):
         """Load a program into memory."""
 
-        address = 0
+        # address = 0
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010,  # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111,  # PRN R0
+        #     0b00000000,
+        #     0b00000001,  # HLT
+        # ]
+        #
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        try:
+            address = 0
+            if len(sys.argv) != 2:
+                print("Usage: file.py filename", file=sys.stderr)
+                sys.exit(1)
+            else:
+                with open(sys.argv[1]) as f:
+                    for line in f:
+                        comment_split = line.split("#")
+                        num = comment_split[0].strip()
+
+                        if num == "":
+                            continue  # Ignore blank lines
+
+                        value = int(num, 2)
+                        self.ram[address] = value
+                        address += 1
+        except FileNotFoundError:
+            print(f"{sys.argv[0]}: {sys.argv[1]} not found")
+            sys.exit(2)
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -93,6 +115,12 @@ class CPU:
         self.registers[mar] = mdr
         self.pc += 2
 
+    def mul(self):
+        r0 = self.ram[self.pc + 1]
+        r1 = self.ram[self.pc + 2]
+        result = self.registers[r0] * self.registers[r1]
+        print(f"Multiplying operation result: {result}")
+
     def run(self):
         """Run the CPU."""
         running = True
@@ -109,9 +137,3 @@ class CPU:
                     self.pc += 1
             else:
                 running = False
-
-
-cpu = CPU()
-
-cpu.load()
-cpu.run()
