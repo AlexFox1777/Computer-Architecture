@@ -11,11 +11,14 @@ class CPU:
         self.ram = [0] * 0xFF
         self.registers = [0] * 8
         self.pc = 0
+        self.sp = 7
         self.opcodes = {
             0b10000010: 'ldi',
             0b01000111: 'prn',
             0b00000001: 'hlt',
             0b10100010: 'mul',
+            0b01000101: 'push',
+            0b01000110: 'pop',
         }
 
     def ram_read(self, address):
@@ -24,27 +27,21 @@ class CPU:
     def raw_write(self, value, address):
         self.ram[address] = value
 
+    def push(self):
+        reg = self.ram[self.pc + 1]
+        val = self.registers[reg]
+        self.registers[self.sp] -= 1
+        self.ram[self.registers[self.sp]] = val
+        self.pc += 1
+
+    def pop(self):
+        reg = self.ram[self.pc + 1]
+        val = self.ram[self.registers[self.sp]]
+        self.registers[reg] = val
+        self.registers[self.sp] += 1
+        self.pc += 1
+
     def load(self):
-        """Load a program into memory."""
-
-        # address = 0
-
-        # For now, we've just hardcoded a program:
-
-        # program = [
-        #     # From print8.ls8
-        #     0b10000010,  # LDI R0,8
-        #     0b00000000,
-        #     0b00001000,
-        #     0b01000111,  # PRN R0
-        #     0b00000000,
-        #     0b00000001,  # HLT
-        # ]
-        #
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
-
         try:
             address = 0
             if len(sys.argv) != 2:
@@ -132,8 +129,10 @@ class CPU:
                 if opcode == 'hlt':
                     running = False
                 else:
+                    print(self.registers)
                     func = getattr(self, opcode)
                     func()
                     self.pc += 1
             else:
                 running = False
+        print('r', self.registers)
